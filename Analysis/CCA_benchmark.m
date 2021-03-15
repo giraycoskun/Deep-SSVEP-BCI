@@ -45,7 +45,7 @@ sample_interval = (delay_sample_point+1):delay_sample_point+sample_length; % Ext
 channels=[48 54 55 56 57 58 61 62 63];% Indexes of 9 channels: (Pz, PO3, PO5, PO4, PO6, POz, O1, Oz, and O2)
 % To use all the channels set channels to 1:total_ch=64;
 
-[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
+%[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
 
 %{
 AllData: Preprocessing the data with bandpass filter/s,
@@ -64,7 +64,12 @@ y_AllData: 1x40x4x35
 samp_pts = (50:50:1250);
 %accs = [];
 ave_accs = [];
+signal_lengths = samp_pts./250;
 for idx = 1:length(samp_pts)
+    sample_length = signal_lengths(idx)*sampling_rate;
+    sample_interval = (delay_sample_point+1):delay_sample_point+sample_length;
+    [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
+
  
     T = samp_pts(idx);
     
@@ -75,7 +80,7 @@ for idx = 1:length(samp_pts)
     for subj = 1:total_subject
         character_accuracy = 0;
             for char_chosen = 1:total_character
-                true = 0;
+                detection = 0;
                 for block_chosen = 1:total_block
                     %X -> channels, datapoints in time T, bandpass = 1, target, block, subject                
                     X = AllData(:, (1:T), 1,char_chosen , block_chosen, subj); %[8 x 750] -Block, subband ve subject secimi?
@@ -101,10 +106,10 @@ for idx = 1:length(samp_pts)
                     max_cor = max(r_list);
                     found_char = find(r_list==max_cor);
                     if (found_char == char_chosen)
-                        true = true + 1;
+                        detection = detection + 1;
                     end
                 end
-                accuracy = true / total_block;
+                accuracy = detection / total_block;
                 character_accuracy = character_accuracy + accuracy;
             end
         accuracy = character_accuracy / total_character;
@@ -114,8 +119,8 @@ for idx = 1:length(samp_pts)
     ave_accs(end+1) = ave_acc;
 end
 disp(ave_accs);
-x = samp_pts./250;
-ln = plot(x, ave_accs);
+
+ln = plot(signal_lengths, ave_accs);
 ln.Marker = 'o';
 ln.LineWidth = 2;
 title("CCA")
