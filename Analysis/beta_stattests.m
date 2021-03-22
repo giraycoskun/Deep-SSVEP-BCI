@@ -117,7 +117,9 @@ for idx = 1:length(samp_pts)
         vars_r(end+1) = var(max_rs);
         
         %center matrices
-        for i = 1:n
+        t = size(max_as)
+        cols= t(2)
+        for i = 1:cols
         cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
         cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
         end

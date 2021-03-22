@@ -1,3 +1,4 @@
+
 %% BETA
 %display(D.data)
  %          EEG: [64×750×4×40 double] : [channels x signal x blocks x characters]
