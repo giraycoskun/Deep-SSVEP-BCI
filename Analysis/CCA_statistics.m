@@ -1,4 +1,7 @@
-%% Benchmark
+%% CCA Statistics on Benchmark
+
+
+%% Benchmark Dataset
 
 %{
 Data epochs were extracted from continuous EEG record- ings according to stimulus onsets from the event channel. 
@@ -36,59 +39,65 @@ for i = 1:8:40
     idx = idx + 0.2;
 end
 
-
-%% Preprocessing 
+%% Preprocessing
 
 total_delay=visual_latency+visual_cue; % Total undesired signal length in seconds
 delay_sample_point=round(total_delay*sampling_rate); % # of data points correspond for undesired signal length
 sample_interval = (delay_sample_point+1):delay_sample_point+sample_length; % Extract desired signal
 channels=[48 54 55 56 57 58 61 62 63];% Indexes of 9 channels: (Pz, PO3, PO5, PO4, PO6, POz, O1, Oz, and O2)
-% To use all the channels set channels to 1:total_ch=64;
 
-%[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
+[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
 
+%% CCA Stats
 %{
-AllData: Preprocessing the data with bandpass filter/s,
-					Dimension of AllData:
-					(# of channels, # sample length, #subbands,
-					 # of characters, # of blocks, # of subjects)
-y_AllData: Labels of characters in AllData	
+subject = 1;
+block = 1;
+target = 1;
+nameofdata=strcat('Data/', dataset ,'/s',num2str(subject),'.mat');
+data=load(nameofdata);
+data = data.data;
 
-Benchmark-Dataset 
-AllData: 9x1250x3x40x6x35
-y_AllData: 1x40x4x35
 %}
 
-%% CCA
-%accuracy plot
+means_r = [];
+means_a =[];
+means_b = [];
+vars_r = [];
+cov_a = [];
+cov_b = [];
+traces_a = [];
+traces_b = [];
+N = 40*6*35; %8400
+
 samp_pts = (50:50:1250);
-%accs = [];
-ave_accs = [];
+
 signal_lengths = samp_pts./250;
 for idx = 1:length(samp_pts)
     sample_length = signal_lengths(idx)*sampling_rate;
     sample_interval = (delay_sample_point+1):delay_sample_point+sample_length;
     [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
-
- 
+    
+    
     T = samp_pts(idx);
     
     S = sampling_rate; %sampling rate = 250
     t = linspace(1/S, T/S, T); %t = 1/S, 2/S, ... , T/S
 
-    total_acc = 0;
-    detection = 0;
+    max_as = [];
+    max_bs =[];
+    max_rs = [];
     for subj = 1:total_subject
-        character_accuracy = 0;
-            for char_chosen = 1:total_character
-                
-                for block_chosen = 1:total_block
-                    %X -> channels, datapoints in time T, bandpass = 1, target, block, subject                
+        for char_chosen = 1:total_character
+            for block_chosen = 1:total_block
+                %X -> channels, datapoints in time T, bandpass = 1, target, block, subject                
                     X = AllData(:, (1:T), 1,char_chosen , block_chosen, subj); %[8 x 750] -Block, subband ve subject secimi?
                     %create harmonics given the frequency of the characters
                     r_list = [];
-                    for char = 1:total_character
-                        f = char_freqs(char); %character frequency
+                    A_list = [];
+                    B_list = [];
+                    for target = 1:total_character
+                        %create harmonics given the frequency of the characters
+                        f = char_freqs(target); %character frequency
                         Y = [sin(2*pi*f*t);
                             cos(2*pi*f*t); 
                             sin(4*pi*f*t);
@@ -100,32 +109,61 @@ for idx = 1:length(samp_pts)
                             sin(10*pi*f*t);
                             cos(10*pi*f*t)];  %y(t) 6 x 750 
 
-                       % Y= transpose(Y); disp(size(Y));
-                       [A,B,r,U,V,stats] = canoncorr(X',Y');
-                       r_list(end+1) = r(1);
-                    end
-                    max_cor = max(r_list);
-                    found_char = find(r_list==max_cor);
-                    if (found_char == char_chosen)
-                        detection = detection + 1;
-                    end
-                end
-                %accuracy = detection / total_block;
-                %character_accuracy = character_accuracy + accuracy;
-            end
-        %accuracy = character_accuracy / total_character;
-        %total_acc = total_acc + accuracy;
-    end
-    %ave_acc = total_acc / total_subject;
-    ave_acc = detection / (total_subject*total_character*total_block);
-    ave_accs(end+1) = ave_acc;
-end
-disp(ave_accs);
 
-ln = plot(signal_lengths, ave_accs);
+                        [A,B,r,U,V,stats] = canoncorr(X',Y');
+                        r_list(end+1) = r(1);
+                        A_list = [A_list A(:,1)];
+                        B_list = [B_list B(:,1)];
+                    end
+
+                    max_cor = max(r_list);
+                    found_char = find(r_list==max_cor); %return the index with maximum corr coeffient (r)
+                    max_a = A_list(:,found_char);
+                    max_b = B_list(:,found_char);
+
+                    max_as = [max_as max_a];
+                    max_bs = [max_bs max_b];
+                    max_rs(end+1) = max(r_list);
+            end
+        end
+    end
+    
+    means_r(end+1) = mean(max_rs);
+    vars_r(end+1) = var(max_rs);
+
+    %center matrices
+    for i = 1:N
+        cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
+        cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
+    end
+
+    cov_as = cent_as * cent_as' / N;
+    cov_bs = cent_bs * cent_bs' / N;
+
+
+    trace_as = trace(cov_as);
+    trace_bs = trace(cov_bs);
+    traces_a = [traces_a trace_as];
+    traces_b = [traces_b trace_bs];
+
+    means_a = [means_a mean(mean(max_as))];
+    means_b = [means_b mean(mean(max_bs))];
+end
+
+figure(1);
+ln = plot(signal_lengths, means_r, '-o');
+hold on;
+
+ln = plot(signal_length, vars_r, '-s');
 ln.Marker = 'o';
 ln.LineWidth = 2;
-title("CCA")
-xlabel('Time (s)')
-%xticks(samp_pts./250);
-ylabel('Accuracy (%)')
+hold off;
+figure(2);
+plot(signal_length, means_a);
+hold on;
+plot(signal_length, trace_as);
+hold off;
+figure(3);
+plot(signal_length, means_b);
+figure(4);
+plot(signal_length, trace_bs);
