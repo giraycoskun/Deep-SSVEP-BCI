@@ -53,7 +53,7 @@ traces_a = [];
 traces_b = [];
 rank = 2;
 
-N = 1120; %40*4*70
+N = 11200; %40*4*70
 
 
 for idx = 1:length(samp_pts)
@@ -117,9 +117,9 @@ for idx = 1:length(samp_pts)
         vars_r(end+1) = var(max_rs);
         
         %center matrices
-        t = size(max_as)
-        cols= t(2)
-        for i = 1:cols
+        t = size(max_as);
+        rows = t(1);
+        for i = 1:rows
         cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
         cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
         end
@@ -139,56 +139,74 @@ for idx = 1:length(samp_pts)
 end
 %%
 set(gcf,'color','w');
-plot( samp_pts./250,vars_r);
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,vars_r,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Variance of R')
 
 %%
-plot( samp_pts./250,means_r);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,means_r,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Mean of R')
 
 %%
-plot( samp_pts./250,traces_a);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,traces_a,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Trace of A (W1)')
 
 %%
-plot( samp_pts./250,traces_b);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,traces_b,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Trace of B (W2)')
 
 %% 
-plot( samp_pts./250,means_b);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,means_b,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Mean of B (W2)')
 
 %%
-plot( samp_pts./250,means_a);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+plot( samp_pts./250,means_a,'-o','LineWidth',2);
 
 xlabel('Time (s)')
 ylabel('Mean of A (W1)')
 
 %% Means and Traces of A-B
-
-A =plot( samp_pts./250,means_a);
-B =plot( samp_pts./250,means_b);
-C = plot( samp_pts./250,traces_a);
-D= plot( samp_pts./250,traces_b);
-legend([A, B, C, D],{ 'Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)'})
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+A = plot( samp_pts./250,means_a,'-o','LineWidth',2);
+hold on
+B = plot( samp_pts./250,means_b,'-+','LineWidth',2);
+C = plot( samp_pts./250,traces_a,'-x','LineWidth',2);
+D = plot( samp_pts./250,traces_b,'-^','LineWidth',2);
+hold off
+legend('Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)')
+legend boxoff;
 
 %% Traces of A-B
-
-C = plot( samp_pts./250,traces_a);
+set(gcf,'color','w');
+set(gca, 'FontName', 'Arial','FontSize', 12);
+C = plot( samp_pts./250,traces_a,'-o','LineWidth',2);
 hold on
-D= plot( samp_pts./250,traces_b);
+D= plot( samp_pts./250,traces_b,'-^','LineWidth',2);
 hold off
 legend( [C, D],'Trace of A (W1)','Trace of B (W2)')
+legend boxoff;
+
 
 %% 
 
