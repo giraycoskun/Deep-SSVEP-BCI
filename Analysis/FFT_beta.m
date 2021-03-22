@@ -18,7 +18,7 @@ for char = 36:40
         D= D.EEG;	
 
         ave_signal=zeros(1,L); % Initialization
-        for i= 1:(L-500)
+        for i= 1:(D(channel, : 1, char)) % 
             ave_signal(i) = (( D(channel, i, 1, char)+ D(channel, i, 2, char) + D(channel, i, 3, char)+ D(channel, i, 4, char) ) /4) ;
         end
 

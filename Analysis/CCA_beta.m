@@ -101,3 +101,7 @@ bar( (signal_lengths),ave_accs);
 xlabel('Time (s)')
 ylabel('Accuracy (%)')
 grid on
+
+%% Statistical Tests
+
+
