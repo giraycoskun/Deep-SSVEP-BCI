@@ -2,8 +2,8 @@
 
 %% BETA
 %display(D.data)
- %          EEG: [64×750×4×40 double] : [channels x signal x blocks x characters]
- %          suppl_info: [1×1 struct]
+ %          EEG: [64ï¿½750ï¿½4ï¿½40 double] : [channels x signal x blocks x characters]
+ %          suppl_info: [1ï¿½1 struct]
 
 	
 
@@ -51,9 +51,9 @@ means_b = [];
 vars_r = [];
 traces_a = [];
 traces_b = [];
-rank = 2;
+rank = 1; 
 
-N = 1120; %40*4*70
+N = 11200; %40*4*70
 
 
 for idx = 1:length(samp_pts)
@@ -81,8 +81,9 @@ for idx = 1:length(samp_pts)
                     r_list = [];
                     a_list = [];
                     b_list = [];
-                    for char = 1:40
-                        f = supp_freqs(char); %character frequency
+                    %for char = 1:40
+                        %f = supp_freqs(char); %character frequency
+                        f = supp_freqs(char_chosen);
                         Y = [sin(2*pi*f*t);
                             cos(2*pi*f*t); 
                             sin(4*pi*f*t);
@@ -96,20 +97,21 @@ for idx = 1:length(samp_pts)
 
                        % Y= transpose(Y); disp(size(Y));
                        [A,B,r,U,V,stats] = canoncorr(X',Y');
-                       r_list(end+1) = r(rank); %get the rank'th best one 
-                       a_list = [a_list A(:,rank)];
-                       b_list = [b_list B(:,rank)];
+                       %r_list(end+1) = r(rank); %get the rank'th best one 
+                       %a_list = [a_list A(:,rank)];
+                       %b_list = [b_list B(:,rank)];
 
 
-                    end
-                    max_cor = max(r_list);
-                    found_char = find(r_list==max_cor); %return the index with maximum corr coeffient (r)
-                    max_a = a_list(:,found_char);
-                    max_b = b_list(:,found_char);
+                    %end
+                    %max_cor = max(r_list);
+                    max_cor = r(rank);
+                    %found_char = ; %return the index with maximum corr coeffient (r)
+                    max_a = A(:, rank);%a_list(:,found_char);
+                    max_b = B(:, rank); %b_list(:,found_char);
 
                     max_as = [max_as max_a];
                     max_bs = [max_bs max_b];
-                    max_rs(end+1) = max(r_list);
+                    max_rs(end+1) = max_cor;
             end
         end
     end
@@ -117,9 +119,9 @@ for idx = 1:length(samp_pts)
         vars_r(end+1) = var(max_rs);
         
         %center matrices
-        t = size(max_as)
-        cols= t(2)
-        for i = 1:cols
+        t = size(max_as);
+        rows= t(1);
+        for i = 1:rows
         cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
         cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
         end
@@ -138,14 +140,16 @@ for idx = 1:length(samp_pts)
  
 end
 %%
-set(gcf,'color','w');
-plot( samp_pts./250,vars_r);
 
+set(gcf,'color','w');
+set(gca, "FontName","Arial","Fontsize",12);
+plot(samp_pts./250, vars_r ,"-o","LineWidth",2);
 xlabel('Time (s)')
 ylabel('Variance of R')
-
 %%
-plot( samp_pts./250,means_r);
+set(gcf,'color','w');
+set(gca, "FontName","Arial","Fontsize",12);
+plot( samp_pts./250,means_r, "-o","LineWidth",2);
 
 xlabel('Time (s)')
 ylabel('Mean of R')
@@ -180,15 +184,16 @@ A =plot( samp_pts./250,means_a);
 B =plot( samp_pts./250,means_b);
 C = plot( samp_pts./250,traces_a);
 D= plot( samp_pts./250,traces_b);
-legend([A, B, C, D],{ 'Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)'})
+legend([A, B, C, D], 'Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)')
 
 %% Traces of A-B
 
-C = plot( samp_pts./250,traces_a);
+C = plot( samp_pts./250,traces_a,"-o", "LineWidth",2);
 hold on
-D= plot( samp_pts./250,traces_b);
+D= plot( samp_pts./250,traces_b, "-s", "LineWidth", 2);
 hold off
 legend( [C, D],'Trace of A (W1)','Trace of B (W2)')
+legend boxoff;
 
 %% 
 
@@ -200,6 +205,7 @@ F= plot( traces_b,means_r);
 hold off
 xlabel("Trace");
 legend( [C, D,E, F],'Mean of A (W1)','Mean of B (W2)', "Mean of r (wrt Trace of A)", "Mean of r (wrt Trace of B)")
+
 
 
 
