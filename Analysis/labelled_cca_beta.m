@@ -41,7 +41,7 @@ channels=[48 54 55 56 57 58 61 62 63];% Indexes of 9 channels: (Pz, PO3, PO5, PO
 %         -y_AllData: Labels of characters in AllData					
 
 %% CCA
-samp_pts = (50:25:500);  %(50:25:500);
+samp_pts = (50:50:500);  %(50:25:500);
 ave_accs = [];
 
 signal_lengths = samp_pts./250;
@@ -51,7 +51,7 @@ means_b = [];
 vars_r = [];
 traces_a = [];
 traces_b = [];
-rank = 1; 
+rank = 2; 
 
 N = 11200; %40*4*70
 
@@ -122,8 +122,13 @@ for idx = 1:length(samp_pts)
         t = size(max_as);
         rows= t(1);
         for i = 1:rows
-        cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
-        cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
+        cent_as(i,:) = max_as(i,:) - mean(max_as(i,:));
+        end
+        
+        t = size(max_bs);
+        rows= t(1);
+        for i = 1:rows
+        cent_bs(i,:) = max_bs(i,:) - mean(max_bs(i,:));
         end
         
         cov_as = cent_as * cent_as' / N;
@@ -154,38 +159,6 @@ plot( samp_pts./250,means_r, "-o","LineWidth",2);
 xlabel('Time (s)')
 ylabel('Mean of R')
 
-%%
-plot( samp_pts./250,traces_a);
-
-xlabel('Time (s)')
-ylabel('Trace of A (W1)')
-
-%%
-plot( samp_pts./250,traces_b);
-
-xlabel('Time (s)')
-ylabel('Trace of B (W2)')
-
-%% 
-plot( samp_pts./250,means_b);
-
-xlabel('Time (s)')
-ylabel('Mean of B (W2)')
-
-%%
-plot( samp_pts./250,means_a);
-
-xlabel('Time (s)')
-ylabel('Mean of A (W1)')
-
-%% Means and Traces of A-B
-
-A =plot( samp_pts./250,means_a);
-B =plot( samp_pts./250,means_b);
-C = plot( samp_pts./250,traces_a);
-D= plot( samp_pts./250,traces_b);
-legend([A, B, C, D], 'Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)')
-
 %% Traces of A-B
 
 C = plot( samp_pts./250,traces_a,"-o", "LineWidth",2);
@@ -194,18 +167,6 @@ D= plot( samp_pts./250,traces_b, "-s", "LineWidth", 2);
 hold off
 legend( [C, D],'Trace of A (W1)','Trace of B (W2)')
 legend boxoff;
-
-%% 
-
-C = plot(traces_a, means_a);
-hold on
-D= plot( traces_b,means_b);
-E= plot( traces_a,means_r);
-F= plot( traces_b,means_r);
-hold off
-xlabel("Trace");
-legend( [C, D,E, F],'Mean of A (W1)','Mean of B (W2)', "Mean of r (wrt Trace of A)", "Mean of r (wrt Trace of B)")
-
 
 
 
