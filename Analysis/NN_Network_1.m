@@ -88,8 +88,6 @@ for c = 1:40
         
         d = d/2;
         
-        
-        
         lgraph = addLayers(lgraph, layers);
         
     end
