@@ -49,7 +49,7 @@ d = 64; %number of channels
 numChannelFilters = d/2;
 numBlocks = 4;
 T = 500;
-alpha = 0.5;
+alpha = 10;
 
 
 subbanNum = 3;
@@ -59,14 +59,18 @@ channelSize = 64;
 d = channelSize;
 lgraph = layerGraph;
 
+input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer');
+lgraph = addLayers(lgraph, input_layer);
+
 for c = 1:40
     
-    input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name',['input_sublayer_',num2str(c)]);
+    
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
-    lgraph = addLayers(lgraph, input_layer);
+    %lgraph = addLayers(lgraph, input_layer);
     lgraph = addLayers(lgraph, subbanComb_layer);
     
-    lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
+    lgraph = connectLayers(lgraph, 'input_layer', ['subbanComb_sublayer_',num2str(c)]);
+    %lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
     %plot(lgraph);
     
     for divTime=1:subNetworkSize
@@ -82,7 +86,13 @@ for c = 1:40
         
         d = d/2;
         
-         lgraph = addLayers(lgraph, layers);
+        if(divTime == 1)
+            T = alpha*d/2;
+        else
+            T = T/2;
+        end
+        
+        lgraph = addLayers(lgraph, layers);
         
     end
     d = channelSize;
@@ -121,6 +131,7 @@ lgraph = addLayers(lgraph, outLayers);
 lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 
 plot(lgraph);
+analyzeNetwork(lgraph);
 %% Notes
 
 

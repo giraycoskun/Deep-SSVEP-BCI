@@ -51,54 +51,26 @@ numBlocks = 4;
 T = 500;
 alpha = 0.5;
 
-%{
-channelCombinatonLayer = convolution2dLayer([1,1],1,'WeightsInitializer','ones');
-    
 
-primeLayer = @(block) [
-    convolution2dLayer([1, d],d/2)
-    convolution2dLayer([T, 1],alpha*d/2)
-    leakyReluLayer    
-    ];
-
-%primeNetwork = blockedNetwork(primeLayer,numBlocks);
-
-lastLayer = fullyConnectedLayer(40);
-
-outLayer = softmaxLayer('Name','sm1');
-
-layer = [
-    primeLayer
-    lastLayer
-    ];
-
-
-
-%dlnet = initialize(dlnet);
-
-lgraph = layerGraph;
-
-for t=1:40
-    lgraph = connectLayers(lgraph,channelCombinatonLayer, layer);
-end
-
-network = connectLayers(lgraph, network);
-plot(network);
-%}
 subbanNum = 3;
 sizes = [T, d, subbanNum];
 subNetworkSize = 4;
+channelSize = 64;
+d = channelSize;
 lgraph = layerGraph;
+
+input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer');
+lgraph = addLayers(lgraph, input);
 
 for c = 1:40
     
-    input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name',['input_sublayer_',num2str(c)]);
-    lgraph = addLayers(lgraph, input_layer);
+   
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
+    lgraph = addLayers(lgraph, input_layer);
     lgraph = addLayers(lgraph, subbanComb_layer);
     
     lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
-    plot(lgraph);
+    %plot(lgraph);
     
     for divTime=1:subNetworkSize
         
@@ -111,20 +83,27 @@ for c = 1:40
     leakyReluLayer('Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
             ];
         
+        d = d/2;
+        
          lgraph = addLayers(lgraph, layers);
-         lgraph = connectLayers(lgraph, layers );
         
     end
+    d = channelSize;
+    lgraph = connectLayers(lgraph,['subbanComb_sublayer_',num2str(c)] ,['channelComb', num2str(1) ,'_sublayer_',num2str(c)] );
     
-    
+    for divTime=1:subNetworkSize-1
         
-    lgraph = addLayers(lgraph,layers);
-    lgraph = connectLayers(lgraph, ['subbanComb_sublayer_',num2str(c)],['channelComb_sublayer_',num2str(c)]);
+        lgraph = connectLayers(lgraph, ['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)],['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
+    end
+    
+    fcLayer = fullyConnectedLayer(1, 'Name',['fc_layer_sublayer_', num2str(c)]);
+    lgraph = addLayers(lgraph,fcLayer);
+    lgraph = connectLayers(lgraph,['activationLR', num2str(subNetworkSize) ,'_sublayer_',num2str(c)] ,['fc_layer_sublayer_', num2str(c)]);
+    
     
 end
 
-%fcLayer = fullyConnectedLayer(40, 'Name','fc_layer', 'InputSize', 40);
-%lgraph = addLayers(lgraph,fcLayer);
+
 
 concatLayer = concatenationLayer(1,40,'Name','concat_layer');
 lgraph = addLayers(lgraph,concatLayer);
@@ -134,7 +113,7 @@ lgraph = addLayers(lgraph,concatLayer);
 %plot(lgraph);
 for c = 1:40
  %disp(c)
-lgraph = connectLayers(lgraph,['activationLR_sublayer_',num2str(c)], ['concat_layer/in',num2str(c)]);
+lgraph = connectLayers(lgraph, ['fc_layer_sublayer_', num2str(c)] , ['concat_layer/in',num2str(c)]);
 end
 
 outLayers = [
