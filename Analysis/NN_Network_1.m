@@ -74,8 +74,10 @@ for c = 1:40
     %plot(lgraph);
     
     for divTime=1:subNetworkSize
-        
-        
+         if (divTime ~= 1)
+            T = alpha*d;
+         end
+         
         layers = [
     convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
     resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
@@ -86,11 +88,7 @@ for c = 1:40
         
         d = d/2;
         
-        if(divTime == 1)
-            T = alpha*d/2;
-        else
-            T = T/2;
-        end
+        
         
         lgraph = addLayers(lgraph, layers);
         
