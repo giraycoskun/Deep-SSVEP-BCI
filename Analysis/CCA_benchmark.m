@@ -25,7 +25,7 @@ subban_no = 3;
 signal_length = 5;
 sample_length=sampling_rate*signal_length; 
 
-visual_latency=0.136; %visual_latency=0.13;
+visual_latency=0.14; %visual_latency=0.13;
 %max_epochs=800;
 %dropout_second_stage=0.7;
 
@@ -77,11 +77,10 @@ for idx = 1:length(samp_pts)
     t = linspace(1/S, T/S, T); %t = 1/S, 2/S, ... , T/S
 
     total_acc = 0;
-    detection = 0;
     for subj = 1:total_subject
         character_accuracy = 0;
             for char_chosen = 1:total_character
-                
+                detection = 0;
                 for block_chosen = 1:total_block
                     %X -> channels, datapoints in time T, bandpass = 1, target, block, subject                
                     X = AllData(:, (1:T), 1,char_chosen , block_chosen, subj); %[8 x 750] -Block, subband ve subject secimi?
@@ -110,14 +109,13 @@ for idx = 1:length(samp_pts)
                         detection = detection + 1;
                     end
                 end
-                %accuracy = detection / total_block;
-                %character_accuracy = character_accuracy + accuracy;
+                accuracy = detection / total_block;
+                character_accuracy = character_accuracy + accuracy;
             end
-        %accuracy = character_accuracy / total_character;
-        %total_acc = total_acc + accuracy;
+        accuracy = character_accuracy / total_character;
+        total_acc = total_acc + accuracy;
     end
-    %ave_acc = total_acc / total_subject;
-    ave_acc = detection / (total_subject*total_character*total_block);
+    ave_acc = total_acc / total_subject;
     ave_accs(end+1) = ave_acc;
 end
 disp(ave_accs);

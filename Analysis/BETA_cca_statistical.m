@@ -2,8 +2,8 @@
 
 %% BETA
 %display(D.data)
- %          EEG: [64×750×4×40 double] : [channels x signal x blocks x characters]
- %          suppl_info: [1×1 struct]
+ %          EEG: [64ï¿½750ï¿½4ï¿½40 double] : [channels x signal x blocks x characters]
+ %          suppl_info: [1ï¿½1 struct]
 
 	
 
@@ -81,8 +81,9 @@ for idx = 1:length(samp_pts)
                     r_list = [];
                     a_list = [];
                     b_list = [];
-                    for char = 1:40
-                        f = supp_freqs(char); %character frequency
+                    %for char = 1:40
+                        %f = supp_freqs(char); %character frequency
+                        f = supp_freqs(char_chosen);
                         Y = [sin(2*pi*f*t);
                             cos(2*pi*f*t); 
                             sin(4*pi*f*t);
@@ -101,7 +102,7 @@ for idx = 1:length(samp_pts)
                        b_list = [b_list B(:,rank)];
 
 
-                    end
+                    %end
                     max_cor = max(r_list);
                     found_char = find(r_list==max_cor); %return the index with maximum corr coeffient (r)
                     max_a = a_list(:,found_char);
@@ -117,8 +118,8 @@ for idx = 1:length(samp_pts)
         vars_r(end+1) = var(max_rs);
         
         %center matrices
-        t = size(max_as);
-        rows = t(1);
+        t = size(max_as)
+        rows= t(1)
         for i = 1:rows
         cent_as(:,i) = max_as(:,i) - mean(max_as(:,i));
         cent_bs(:,i) = max_bs(:,i) - mean(max_bs(:,i));
@@ -139,74 +140,56 @@ for idx = 1:length(samp_pts)
 end
 %%
 set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,vars_r,'-o','LineWidth',2);
+plot( samp_pts./250,vars_r);
 
 xlabel('Time (s)')
 ylabel('Variance of R')
 
 %%
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,means_r,'-o','LineWidth',2);
+plot( samp_pts./250,means_r);
 
 xlabel('Time (s)')
 ylabel('Mean of R')
 
 %%
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,traces_a,'-o','LineWidth',2);
+plot( samp_pts./250,traces_a);
 
 xlabel('Time (s)')
 ylabel('Trace of A (W1)')
 
 %%
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,traces_b,'-o','LineWidth',2);
+plot( samp_pts./250,traces_b);
 
 xlabel('Time (s)')
 ylabel('Trace of B (W2)')
 
 %% 
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,means_b,'-o','LineWidth',2);
+plot( samp_pts./250,means_b);
 
 xlabel('Time (s)')
 ylabel('Mean of B (W2)')
 
 %%
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-plot( samp_pts./250,means_a,'-o','LineWidth',2);
+plot( samp_pts./250,means_a);
 
 xlabel('Time (s)')
 ylabel('Mean of A (W1)')
 
 %% Means and Traces of A-B
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-A = plot( samp_pts./250,means_a,'-o','LineWidth',2);
-hold on
-B = plot( samp_pts./250,means_b,'-+','LineWidth',2);
-C = plot( samp_pts./250,traces_a,'-x','LineWidth',2);
-D = plot( samp_pts./250,traces_b,'-^','LineWidth',2);
-hold off
-legend('Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)')
-legend boxoff;
+
+A =plot( samp_pts./250,means_a);
+B =plot( samp_pts./250,means_b);
+C = plot( samp_pts./250,traces_a);
+D= plot( samp_pts./250,traces_b);
+legend([A, B, C, D],{ 'Mean of A (W1)','Mean of B (W2)', 'Trace of A (W1)','Trace of B (W2)'})
 
 %% Traces of A-B
-set(gcf,'color','w');
-set(gca, 'FontName', 'Arial','FontSize', 12);
-C = plot( samp_pts./250,traces_a,'-o','LineWidth',2);
+
+C = plot( samp_pts./250,traces_a);
 hold on
-D= plot( samp_pts./250,traces_b,'-^','LineWidth',2);
+D= plot( samp_pts./250,traces_b);
 hold off
 legend( [C, D],'Trace of A (W1)','Trace of B (W2)')
-legend boxoff;
-
 
 %% 
 
