@@ -43,7 +43,7 @@ channels = (1:64);
 
 
 %% Preprocess
-totalsubject = 2;
+totalsubject = 1;
 totalblock = 2;
 totalcharacter = 40;
 [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
@@ -51,18 +51,16 @@ totalcharacter = 40;
 
 %[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
 
-d = 64; %number of channels
-numChannelFilters = d/2;
-numBlocks = 4;
 T = sample_length;
 alpha = 10;
-
-
-subbanNum = 3;
 subNetworkSize = 4;
 channelSize = 64;
 d = channelSize;
-sizes=size(AllData);
+subbanNum = 3;
+
+sizes = [T, d, subbanNum];
+%sizes=size(AllData);
+
 lgraph = layerGraph;
 
 input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer'); %targetNum, sampleNum, subbanNum
@@ -80,9 +78,7 @@ for c = 1:40
     %plot(lgraph);
     
     for divTime=1:subNetworkSize
-         if (divTime ~= 1)
-            T = alpha*d;
-         end
+         
          
         layers = [
     convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
@@ -91,6 +87,12 @@ for c = 1:40
     resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
     leakyReluLayer('Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
             ];
+        
+        if (divTime == 1)
+            T = alpha*d;
+        else
+            T = T/2;
+        end
         
         d = d/2;
         
@@ -136,11 +138,9 @@ plot(lgraph);
 %analyzeNetwork(lgraph);
 
 
-
 %% Training
 max_epochs=1000;
 acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
-
 
 allblock=1:totalblock;
 %allblock(block)=[]; Exclude the block used for testing     
