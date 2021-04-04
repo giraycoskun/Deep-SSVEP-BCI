@@ -41,7 +41,7 @@ sample_interval = (delay_sample_point+1):delay_sample_point+sample_length; % Ext
 channels = (1:64);
 %% Beta Dataset
 
-%% NN
+%% NN Architecture
 
 %[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
 
@@ -49,7 +49,7 @@ d = 64; %number of channels
 numChannelFilters = d/2;
 numBlocks = 4;
 T = 500;
-alpha = 0.5;
+alpha = 10;
 
 
 subbanNum = 3;
@@ -60,21 +60,24 @@ d = channelSize;
 lgraph = layerGraph;
 
 input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer');
-lgraph = addLayers(lgraph, input);
+lgraph = addLayers(lgraph, input_layer);
 
 for c = 1:40
     
-   
+    
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
-    lgraph = addLayers(lgraph, input_layer);
+    %lgraph = addLayers(lgraph, input_layer);
     lgraph = addLayers(lgraph, subbanComb_layer);
     
-    lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
+    lgraph = connectLayers(lgraph, 'input_layer', ['subbanComb_sublayer_',num2str(c)]);
+    %lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
     %plot(lgraph);
     
     for divTime=1:subNetworkSize
-        
-        
+         if (divTime ~= 1)
+            T = alpha*d;
+         end
+         
         layers = [
     convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
     resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
@@ -85,7 +88,7 @@ for c = 1:40
         
         d = d/2;
         
-         lgraph = addLayers(lgraph, layers);
+        lgraph = addLayers(lgraph, layers);
         
     end
     d = channelSize;
@@ -105,7 +108,7 @@ end
 
 
 
-concatLayer = concatenationLayer(1,40,'Name','concat_layer');
+concatLayer = concatenationLayer(3,40,'Name','concat_layer');
 lgraph = addLayers(lgraph,concatLayer);
 
 
@@ -124,6 +127,45 @@ lgraph = addLayers(lgraph, outLayers);
 lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 
 plot(lgraph);
+analyzeNetwork(lgraph);
+return
+%% Preprocess
+[AllData,y_AllData]=PreProcess(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
+
+%% Training
+totalsubject = 1;
+totalblock = 1;
+
+acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
+sizes=size(AllData);
+
+ for block=1:totalblock
+    %allblock=1:totalblock;
+    %allblock(block)=[]; Exclude the block used for testing     
+    
+    %layers(2, 1).BiasLearnRateFactor=0; % At first layer, sub-bands are combined with 1 cnn layer, 
+    % bias term basically adds DC to signal, hence there is no need to use 
+    % bias term at first layer. Note: Bias terms are initialized with zeros by default.  
+    train=AllData(:,:,:,:,allblock,:); %Getting training data
+    train=reshape(train,[sizes(1),sizes(2),sizes(3),totalcharacter*length(allblock)*totalsubject*1]);
+    
+    train_y=y_AllData(:,:,allblock,:);
+    train_y=reshape(train_y,[1,totalcharacter*length(allblock)*totalsubject*1]);    
+    train_y=categorical(train_y);
+    
+    options = trainingOptions('adam',... % Specify training options for first-stage training
+        'InitialLearnRate',0.0001,...
+        'MaxEpochs',max_epochs,...
+        'MiniBatchSize',100, ...
+        'Shuffle','every-epoch',...
+        'L2Regularization',0.001,...
+        'ExecutionEnvironment','gpu',...
+        'Plots','training-progress');    
+    main_net = trainNetwork(train,train_y,layers,options);    
+    sv_name=['main_net_',int2str(block),'.mat']; 
+    save(sv_name,'main_net'); % Save the trained model
+    all_conf_matrix=zeros(40,40); % Initialization of confusion matrix 
+ end
 %% Notes
 
 

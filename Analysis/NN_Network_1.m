@@ -20,7 +20,7 @@ sampling_rate=250;
 	
 visual_cue=0.5;
 subban_no = 3;
-signal_length = 5;
+signal_length = 0.2;
 sample_length=sampling_rate*signal_length; 
 
 visual_latency=0.136; %visual_latency=0.13;
@@ -41,7 +41,13 @@ sample_interval = (delay_sample_point+1):delay_sample_point+sample_length; % Ext
 channels = (1:64);
 %% Beta Dataset
 
-%% NN
+
+%% Preprocess
+totalsubject = 2;
+totalblock = 2;
+totalcharacter = 40;
+[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
+%% NN Architecture
 
 %[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
 
@@ -53,10 +59,10 @@ alpha = 10;
 
 
 subbanNum = 3;
-sizes = [T, d, subbanNum];
 subNetworkSize = 4;
 channelSize = 64;
 d = channelSize;
+sizes=size(AllData);
 lgraph = layerGraph;
 
 input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer');
@@ -108,7 +114,7 @@ end
 
 
 
-concatLayer = concatenationLayer(1,40,'Name','concat_layer');
+concatLayer = concatenationLayer(3,40,'Name','concat_layer');
 lgraph = addLayers(lgraph,concatLayer);
 
 
@@ -127,7 +133,41 @@ lgraph = addLayers(lgraph, outLayers);
 lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 
 plot(lgraph);
-analyzeNetwork(lgraph);
+%analyzeNetwork(lgraph);
+
+
+
+%% Training
+max_epochs=1000;
+acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
+
+
+allblock=1:totalblock;
+%allblock(block)=[]; Exclude the block used for testing     
+
+%layers(2, 1).BiasLearnRateFactor=0; % At first layer, sub-bands are combined with 1 cnn layer, 
+% bias term basically adds DC to signal, hence there is no need to use 
+% bias term at first layer. Note: Bias terms are initialized with zeros by default.  
+train=AllData(:,:,:,:,allblock,:); %Getting training data
+train=reshape(train,[sizes(1),sizes(2),sizes(3),totalcharacter*length(allblock)*totalsubject*1]);
+
+train_y=y_AllData(:,:,allblock,:);
+train_y=reshape(train_y,[1,totalcharacter*length(allblock)*totalsubject*1]);    
+train_y=categorical(train_y);
+
+options = trainingOptions('adam',... % Specify training options for first-stage training
+    'InitialLearnRate',0.0001,...
+    'MaxEpochs',max_epochs,...
+    'MiniBatchSize',100, ...
+    'Shuffle','every-epoch',...
+    'L2Regularization',0.001,...
+    'ExecutionEnvironment','cpu',...
+    'Plots','training-progress');    
+main_net = trainNetwork(train,train_y,lgraph,options);    
+sv_name=['main_net_',int2str(block),'.mat']; 
+save(sv_name,'main_net'); % Save the trained model
+all_conf_matrix=zeros(40,40); % Initialization of confusion matrix 
+
 %% Notes
 
 
