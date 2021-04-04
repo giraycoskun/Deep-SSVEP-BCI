@@ -1,5 +1,6 @@
 %% CCA Statistics on Benchmark
 
+
 %% Benchmark Dataset
 
 %{
@@ -58,7 +59,7 @@ data = data.data;
 
 %}
 
-rank = 2;
+rank = 0;
 
 means_r = [];
 means_a =[];
@@ -96,9 +97,9 @@ for idx = 1:length(samp_pts)
                     r_list = [];
                     A_list = [];
                     B_list = [];
-                    for target = 1:total_character
-                        %create harmonics given the frequency of the characters
-                        f = char_freqs(target); %character frequency
+                    
+                    if rank == 0
+                        f = char_freqs(char_chosen); %character frequency
                         Y = [sin(2*pi*f*t);
                             cos(2*pi*f*t); 
                             sin(4*pi*f*t);
@@ -111,14 +112,35 @@ for idx = 1:length(samp_pts)
                             cos(10*pi*f*t)];  %y(t) 6 x 750 
 
 
-                        [A,B,r,U,V,stats] = canoncorr(X',Y');
-                        r_list(end+1) = r(1);
-                        A_list = [A_list A(:,1)];
-                        B_list = [B_list B(:,1)];
+                            [A,B,r,U,V,stats] = canoncorr(X',Y');
+                            r_list(end+1) = r(1);
+                            A_list = [A_list A(:,1)];
+                            B_list = [B_list B(:,1)];
+                        
+                    else  
+                        for target = 1:total_character
+                            %create harmonics given the frequency of the characters
+                            f = char_freqs(target); %character frequency
+                            Y = [sin(2*pi*f*t);
+                                cos(2*pi*f*t); 
+                                sin(4*pi*f*t);
+                                cos(4*pi*f*t);
+                                sin(6*pi*f*t);
+                                cos(6*pi*f*t);
+                                sin(8*pi*f*t);
+                                cos(8*pi*f*t);
+                                sin(10*pi*f*t);
+                                cos(10*pi*f*t)];  %y(t) 6 x 750 
+
+
+                            [A,B,r,U,V,stats] = canoncorr(X',Y');
+                            r_list(end+1) = r(1);
+                            A_list = [A_list A(:,1)];
+                            B_list = [B_list B(:,1)];
+                        end
                     end
-                    
-                    sorted_r_list = sort(r_list, 'descend');
-                    max_cor = sorted_r_list(rank);
+                    %TODO with rank
+                    max_cor = max(r_list);
                     found_char = find(r_list==max_cor); %return the index with maximum corr coeffient (r)
                     max_a = A_list(:,found_char);
                     max_b = B_list(:,found_char);
@@ -159,8 +181,8 @@ set(gcf,'color','w');
 set(gca, 'FontName', 'Arial','FontSize', 12);
 plot( samp_pts./250,vars_r,'-o','LineWidth',2);
 
-xlabel('Time (s)');
-ylabel('Variance of R');
+xlabel('Time (s)')
+ylabel('Variance of R')
 
 %%
 set(gcf,'color','w');
