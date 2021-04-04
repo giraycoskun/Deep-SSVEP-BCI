@@ -54,7 +54,7 @@ totalcharacter = 40;
 d = 64; %number of channels
 numChannelFilters = d/2;
 numBlocks = 4;
-T = 500;
+T = sample_length;
 alpha = 10;
 
 
@@ -65,7 +65,7 @@ d = channelSize;
 sizes=size(AllData);
 lgraph = layerGraph;
 
-input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer');
+input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer'); %targetNum, sampleNum, subbanNum
 lgraph = addLayers(lgraph, input_layer);
 
 for c = 1:40
