@@ -49,8 +49,6 @@ totalcharacter = 40;
 [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
 %% NN Architecture
 
-%[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,total_subject,total_block,total_character,sampling_rate,dataset);
-
 T = sample_length;
 alpha = 10;
 subNetworkSize = 4;
@@ -93,6 +91,7 @@ for c = 1:networkSize
     %resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
      depthToSpace2dLayer([alpha*d/2, 1],'Name',['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)])
     leakyReluLayer('Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
+    dropoutLayer(0.5,'Name',['drop', num2str(divTime) ,'_sublayer_',num2str(c)])
             ];
         
         if (divTime == 1)
@@ -111,12 +110,12 @@ for c = 1:networkSize
     
     for divTime=1:subNetworkSize-1
         
-        lgraph = connectLayers(lgraph, ['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)],['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
+        lgraph = connectLayers(lgraph, ['drop', num2str(divTime) ,'_sublayer_',num2str(c)],['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
     end
     
     fcLayer = fullyConnectedLayer(1, 'Name',['fc_layer_sublayer_', num2str(c)]);
     lgraph = addLayers(lgraph,fcLayer);
-    lgraph = connectLayers(lgraph,['activationLR', num2str(subNetworkSize) ,'_sublayer_',num2str(c)] ,['fc_layer_sublayer_', num2str(c)]);
+    lgraph = connectLayers(lgraph,['drop', num2str(subNetworkSize) ,'_sublayer_',num2str(c)] ,['fc_layer_sublayer_', num2str(c)]);
     
     
 end
@@ -146,7 +145,7 @@ lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 
 %% Training
 max_epochs=50;
-acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
+%acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
 
 allblock=1:5;
 %allblock(block)=[]; Exclude the block used for testing     
