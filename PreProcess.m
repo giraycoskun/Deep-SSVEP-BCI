@@ -55,7 +55,7 @@ for subject=1:totalsubject
                 end                 
                 AllData(:,:,i,chr,blk,subject)=processed_signal;
 				y_AllData(1,chr,blk,subject)=chr;
-            end
+                endt
         end
     end    
 end

@@ -43,8 +43,8 @@ channels = (1:64);
 
 
 %% Preprocess
-totalsubject = 1;
-totalblock = 2;
+totalsubject = 35;
+totalblock = 6;
 totalcharacter = 40;
 [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
 %% NN Architecture
@@ -54,6 +54,7 @@ totalcharacter = 40;
 T = sample_length;
 alpha = 10;
 subNetworkSize = 4;
+networkSize = 40;
 channelSize = 64;
 d = channelSize;
 subbanNum = 3;
@@ -66,8 +67,9 @@ lgraph = layerGraph;
 input_layer = imageInputLayer([sizes(1),sizes(2),sizes(3)],'Normalization','none','Name','input_layer'); %targetNum, sampleNum, subbanNum
 lgraph = addLayers(lgraph, input_layer);
 
-for c = 1:40
-    
+
+
+for c = 1:networkSize
     
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
     %lgraph = addLayers(lgraph, input_layer);
@@ -77,19 +79,24 @@ for c = 1:40
     %lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
     %plot(lgraph);
     
+    T = sizes(1);
+    d = sizes(2);
+    
     for divTime=1:subNetworkSize
          
          
         layers = [
     convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
-    resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
+    %resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
+    depthToSpace2dLayer([1, d/2],'Name',['depthSpace', num2str(divTime) ,'_sublayer_',num2str(c)])
     convolution2dLayer([T, 1],alpha*d/2, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'_sublayer_',num2str(c)])
-    resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
+    %resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
+     depthToSpace2dLayer([alpha*d/2, 1],'Name',['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)])
     leakyReluLayer('Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
             ];
         
         if (divTime == 1)
-            T = alpha*d;
+            T = alpha*d/2;
         else
             T = T/2;
         end
@@ -116,13 +123,13 @@ end
 
 
 
-concatLayer = concatenationLayer(3,40,'Name','concat_layer');
+concatLayer = concatenationLayer(3,networkSize,'Name','concat_layer');
 lgraph = addLayers(lgraph,concatLayer);
 
 
 
 %plot(lgraph);
-for c = 1:40
+for c = 1:networkSize
  %disp(c)
 lgraph = connectLayers(lgraph, ['fc_layer_sublayer_', num2str(c)] , ['concat_layer/in',num2str(c)]);
 end
@@ -134,27 +141,34 @@ outLayers = [
 lgraph = addLayers(lgraph, outLayers);
 lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 
-plot(lgraph);
-analyzeNetwork(lgraph);
-return
-
+%plot(lgraph);
+%analyzeNetwork(lgraph);
 
 %% Training
-max_epochs=1000;
+max_epochs=50;
 acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
 
-allblock=1:totalblock;
+allblock=1:5;
 %allblock(block)=[]; Exclude the block used for testing     
 
 %layers(2, 1).BiasLearnRateFactor=0; % At first layer, sub-bands are combined with 1 cnn layer, 
 % bias term basically adds DC to signal, hence there is no need to use 
 % bias term at first layer. Note: Bias terms are initialized with zeros by default.  
 train=AllData(:,:,:,:,allblock,:); %Getting training data
-train=reshape(train, channelSize,sizes(2),sizes(3),totalcharacter*length(allblock)*totalsubject*1]);
+train=reshape(train,[sizes(1),sizes(2),sizes(3),totalcharacter*length(allblock)*totalsubject*1]);
 
 train_y=y_AllData(:,:,allblock,:);
 train_y=reshape(train_y,[1,totalcharacter*length(allblock)*totalsubject*1]);    
 train_y=categorical(train_y);
+
+testblock = 6;
+testdata=AllData(:,:,:,:,testblock,:);
+testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter, totalsubject]);
+
+test_y=y_AllData(:,:,testblock,:);
+test_y=reshape(test_y,[1,totalcharacter*totalsubject]);
+test_y=categorical(test_y);
+
 
 options = trainingOptions('adam',... % Specify training options for first-stage training
     'InitialLearnRate',0.0001,...
@@ -165,9 +179,14 @@ options = trainingOptions('adam',... % Specify training options for first-stage 
     'ExecutionEnvironment','cpu',...
     'Plots','training-progress');    
 main_net = trainNetwork(train,train_y,lgraph,options);    
-sv_name=['main_net_',int2str(block),'.mat']; 
+sv_name=['main_net_',int2str(2),'.mat']; 
 save(sv_name,'main_net'); % Save the trained model
-all_conf_matrix=zeros(40,40); % Initialization of confusion matrix 
+
+
+[YPred,~] = classify(main_net,testdata);
+acc = mean(YPred==test_y');
+confMat = confusionmat(test_y,YPred);      
+
 
 %% Notes
 
