@@ -4,3 +4,7 @@ Data/
 .DS_Store
 *.asv
 *.mat
+
+./Figures/*
+./Figures
+Figures/
