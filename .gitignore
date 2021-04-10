@@ -8,4 +8,8 @@ Data/
 ./Figures/*
 ./Figures
 Figures/
+
+./Graphs/*
+./Graphs
+Graphs/
 pythonVersion/.ipynb_checkpoints/
