@@ -182,12 +182,32 @@ main_net = trainNetwork(train,train_y,lgraph,options);
 sv_name=['main_net_',int2str(2),'.mat']; 
 save(sv_name,'main_net'); % Save the trained model
 
+%% Testing
+all_conf_matrix=zeros(40,40); % Initialization of confusion matrix 
+acc_matrix=zeros(totalsubject,1); % Initialization of accuracy matrix
+
+for s=1:totalsubject
+testdata=AllData(:,:,:,:,testblock,s);
+testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
+
+test_y=y_AllData(:,:,testblock,s);
+test_y=reshape(test_y,[1,totalcharacter*1]);
+test_y=categorical(test_y);
 
 [YPred,~] = classify(main_net,testdata);
-acc = mean(YPred==test_y');
-confMat = confusionmat(test_y,YPred);      
+acc=mean(YPred==test_y');
+acc_matrix(s,testblock)=acc;
+disp(acc);
 
+all_conf_matrix=all_conf_matrix+confusionmat(test_y,YPred);
 
+end    
+
+sv_name=['confusion_mat_',int2str(testblock),'.mat'];
+save(sv_name,'all_conf_matrix');    
+
+sv_name=['acc_matrix','.mat'];
+save(sv_name,'acc_matrix');  
 %% Notes
 
 
