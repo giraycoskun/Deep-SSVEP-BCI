@@ -49,10 +49,15 @@ totalblock = 6;
 totalcharacter = 40;
 [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
 
+
 As = AllData(:,:,:,1,:,:);
+y_As = y_AllData(:,1,:,:);
 for k=1:38
     AllData= cat(4, AllData, As);
+    y_AllData=cat(2, y_AllData, y_As);
 end
+
+totalcharacter = 78;
 
 %% NN Architecture
 
@@ -94,6 +99,7 @@ for c = 1:networkSize
     convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
     %resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
     depthToSpace2dLayer([1, d/2],'Name',['depthSpace', num2str(divTime) ,'_sublayer_',num2str(c)])
+    dropoutLayer(0.5,'Name',['drop1', num2str(divTime) ,'_sublayer_',num2str(c)])
     convolution2dLayer([T, 1],alpha*d/2, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'_sublayer_',num2str(c)])
     %resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
      depthToSpace2dLayer([alpha*d/2, 1],'Name',['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)])
@@ -156,7 +162,7 @@ lgraph = connectLayers(lgraph,['fc_layer_sublayer_', num2str(c)], 'softMax_layer
 %analyzeNetwork(lgraph);
 
 %% Training
-max_epochs=150;
+max_epochs=100;
 %acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
 
 allblock=1:5;
@@ -170,23 +176,27 @@ train=reshape(train,[sizes(1),sizes(2),sizes(3),totalcharacter*length(allblock)*
 
 train_y=y_AllData(:,:,allblock,:);
 train_y=reshape(train_y,[1,totalcharacter*length(allblock)*totalsubject*1]);
-label = strings(1,40);
+label = strings(1,78);
 for st=2:40
     label(st) = '0';
 end
 label(1) = '1';
+
 for st=41:78
     label(st) = '1';
 end
+
 train_y=categorical(train_y, (1:78) ,label);
 
+totalcharacter = 40;
+
 testblock = 6;
-testdata=AllData(:,:,:,:,testblock,:);
+testdata=AllData(:,:,:,1:40,testblock,:);
 testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter, totalsubject]);
 
-test_y=y_AllData(:,:,testblock,:);
+test_y=y_AllData(:,1:40,testblock,:);
 test_y=reshape(test_y,[1,totalcharacter*totalsubject]);
-test_y=categorical(test_y, (1:78), label);
+test_y=categorical(test_y, (1:40), label(1:40));
 
 options = trainingOptions('adam',... % Specify training options for first-stage training
     'InitialLearnRate',0.0001,...
@@ -205,12 +215,12 @@ all_conf_matrix=zeros(40,40); % Initialization of confusion matrix
 acc_matrix=zeros(totalsubject,1); % Initialization of accuracy matrix
 
 for s=1:totalsubject
-testdata=AllData(:,:,:,:,testblock,s);
+testdata=AllData(:,:,:,1:40,testblock,s);
 testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
 
-test_y=y_AllData(:,:,testblock,s);
+test_y=y_AllData(:,1:40,testblock,s);
 test_y=reshape(test_y,[1,totalcharacter*1]);
-test_y=categorical(test_y, (1:78), label);
+test_y=categorical(test_y, (1:40), label(1:40));
 
 [YPred,~] = classify(main_net,testdata);
 disp(YPred);
