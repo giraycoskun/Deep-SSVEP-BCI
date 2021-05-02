@@ -73,7 +73,8 @@ lgraph = addLayers(lgraph, input_layer);
 
 
 for c = 1:networkSize
-    
+    k_d=total_channel;
+    d = total_channel-1;
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
     %lgraph = addLayers(lgraph, input_layer);
     lgraph = addLayers(lgraph, subbanComb_layer);
