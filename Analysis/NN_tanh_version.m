@@ -51,7 +51,7 @@ totalcharacter = 40;
 %% NN Architecture
 
 T = sample_length;
-alpha = 3;
+alpha = 5;
 subNetworkSize = 2;
 networkSize = 40;
 channelSize = 8;
@@ -86,23 +86,25 @@ for c = 1:networkSize
     T = sizes(1);
     %d = sizes(2);
     
-    for divTime=1:subNetworkSize
+   for divTime=1:subNetworkSize
          
          
         layers = [
-    convolution2dLayer([1, k_d],d/2,'WeightsInitializer','he', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
-    %convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
+    convolution2dLayer([1, k_d],d*2,'WeightsInitializer','he', 'Name', ['channelComb', num2str(divTime) ,'_sublayer_',num2str(c)])
     
-    %resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'_sublayer_',num2str(c)])
-    depthToSpace2dLayer([1, d/2],'Name',['depthSpace', num2str(divTime) ,'_sublayer_',num2str(c)])
+    %convolution2dLayer([1, d],d/2,'WeightsInitializer','ones', 'Name', ['channelComb', num2str(divTime) ,'sublayer',num2str(c)])
+    
+    %resize3dLayer('OutputSize',[T,d/2,1],'Name',['resize1_', num2str(divTime) ,'sublayer',num2str(c)])
+    depthToSpace2dLayer_our(1, 2*d,['depthSpace', num2str(divTime) ,'sublayer',num2str(c)])
      
-   convolution2dLayer([T, 1],alpha*d/2, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'_sublayer_',num2str(c)])
+   convolution2dLayer([T, 1],alpha*d, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'sublayer',num2str(c)])
    
-    %convolution2dLayer([T, 1],alpha*d/2, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'_sublayer_',num2str(c)])
-    %dropoutLayer(0.5,'Name',['drop1', num2str(divTime) ,'_sublayer_',num2str(c)])
-    %resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'_sublayer_',num2str(c)])
-    depthToSpace2dLayer([alpha*d/2, 1],'Name',['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)])
-    leakyReluLayer(0.7, 'Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
+    %convolution2dLayer([T, 1],alpha*d/2, 'WeightsInitializer','narrow-normal','Name',['inputComb', num2str(divTime) ,'sublayer',num2str(c)])
+    dropoutLayer(0.5,'Name',['drop1', num2str(divTime) ,'_sublayer_',num2str(c)])
+    %resize3dLayer('OutputSize',[alpha*d/2, d/2, 1], 'Name',['resize2_', num2str(divTime) ,'sublayer',num2str(c)])
+    %depthToSpace2dLayer_our(alpha*d/2, 1,['depthSpace2', num2str(divTime) ,'sublayer',num2str(c)])
+    depthToSpace2dLayer_our(alpha*d, 1,['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)])
+    leakyReluLayer(1, 'Name',['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)])
     %dropoutLayer(0.5,'Name',['drop', num2str(divTime) ,'_sublayer_',num2str(c)])
             ];
         
@@ -111,9 +113,9 @@ for c = 1:networkSize
         else
             T = T/2;
         end
-        
+        k_d=2*d;
         d = d/2;
-        k_d=d;
+        
         lgraph = addLayers(lgraph, layers);
         
     end
@@ -123,6 +125,7 @@ for c = 1:networkSize
     for divTime=1:subNetworkSize-1
         lgraph = connectLayers(lgraph, ['activationLR', num2str(divTime) ,'_sublayer_',num2str(c)], ['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
         %lgraph = connectLayers(lgraph, ['depthSpace2', num2str(divTime) ,'_sublayer_',num2str(c)],['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
+        %lgraph = connectLayers(lgraph, ['drop', num2str(divTime) ,'_sublayer_',num2str(c)],['channelComb', num2str(divTime+1) ,'_sublayer_',num2str(c)]);
     end
     
     fcLayer = fullyConnectedLayer(1, 'Name',['fc_layer_sublayer_', num2str(c)]);
@@ -192,8 +195,7 @@ options = trainingOptions('adam',... % Specify training options for first-stage 
     'MiniBatchSize',300, ...
     'Shuffle','every-epoch',...
     'L2Regularization',0.001,...
-    'ExecutionEnvironment','cpu',...
-    'Plots','training-progress');    
+    'ExecutionEnvironment','cpu');    
 main_net = trainNetwork(train,train_y,lgraph,options);    
 sv_name=['main_net_',int2str(2),'.mat']; 
 save(sv_name,'main_net'); % Save the trained model
