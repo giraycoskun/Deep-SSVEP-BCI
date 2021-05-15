@@ -12,6 +12,8 @@ https://www.mathworks.com/help/deeplearning/ug/list-of-deep-learning-layers.html
 % Number of Blocks: 6
 
 dataset = "Bench";
+
+addpath('/cta/users/caksoy/Bench/');
 total_subject=35;
 total_block=6;
 total_character=40;
@@ -114,13 +116,17 @@ for c = 1:networkSize
     d = total_channel-1;
     cca_init_layer = groupedConvolution2dLayer([1,total_channel],total_channel,subbanNum,'Weights',A_weights(c,:,:,:,:),'Name',['gconv',num2str(c)] );
     lgraph = addLayers(lgraph, cca_init_layer);
+    lgraph = connectLayers(lgraph, 'input_layer', ['gconv',num2str(c)]);
+    
+    reshape_layer = resize3dLayer('OutputSize',[sample_length,total_channel,subbanNum],'Name',['depthSpace', num2str(c)]);
+    lgraph = addLayers(lgraph, reshape_layer);
+    lgraph = connectLayers(lgraph, ['gconv',num2str(c)], ['depthSpace', num2str(c)] );
     subbanComb_layer = convolution2dLayer([1,1],1,'WeightsInitializer','ones','Name',['subbanComb_sublayer_',num2str(c)]);
     %lgraph = addLayers(lgraph, input_layer);
     lgraph = addLayers(lgraph, subbanComb_layer);
     
-    lgraph = connectLayers(lgraph, 'input_layer', ['gconv',num2str(c)]);
     
-    lgraph = connectLayers(lgraph, ['gconv',num2str(c)], ['subbanComb_sublayer_',num2str(c)]);
+    lgraph = connectLayers(lgraph, ['depthSpace',num2str(c)], ['subbanComb_sublayer_',num2str(c)]);
     %lgraph = connectLayers(lgraph, ['input_sublayer_',num2str(c)],['subbanComb_sublayer_',num2str(c)]);
     %plot(lgraph);
     
