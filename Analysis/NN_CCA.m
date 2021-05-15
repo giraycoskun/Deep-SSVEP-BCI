@@ -58,12 +58,12 @@ totalcharacter = 40;
 %					  # of blocks,  # of characters, 10, 9)
 
 allblock=1:5; 
-sample_length = sampling_rate * signal_length / 50; %"/50" since the A's and B's are recorded in samp_pts = (50:50:1250)
+sampleLength = sampling_rate * signal_length / 50; %"/50" since the A's and B's are recorded in samp_pts = (50:50:1250)
 
 %average over training blocks and all subjects
 As_all =load("CCA_As").As;
 As = As_all(:,:,:,allblock,:,:,:);%As with training blocks only
-As_ave = As(sample_length,:,:,:,:,:,:); %Take the corresponding sample_length
+As_ave = As(sampleLength,:,:,:,:,:,:); %Take the corresponding sample_length
 As_ave = squeeze(mean(As_ave, [2,4])); %dimension reduced to: subbands x characters x 9 x 9 
 
 %Prepare A's as weight initializer: ch x d x 1 x d x b = 40 x 9 x 1 x 9 x 3
@@ -81,7 +81,7 @@ end
 
 Bs_all =load("CCA_Bs").Bs;
 Bs = Bs_all(:,:,:,allblock,:,:,:);%Bs with training blocks only
-Bs_ave = Bs(sample_length,:,:,:,:,:,:);
+Bs_ave = Bs(sampleLength,:,:,:,:,:,:);
 Bs_ave = squeeze(mean(Bs_ave, [2,4])); %dimension reduced to: subbands x characters x 10 x 9 
 
 
@@ -210,7 +210,7 @@ lgraph = connectLayers(lgraph,'concat_layer', 'softMax_layer');
 max_epochs=400;
 %acc_matrix=zeros(totalsubject,totalblock); % Initialization of accuracy matrix
 
-%allblock=1:5;
+allblock=1:5;
 %allblock(block)=[]; Exclude the block used for testing     
 
 %layers(2, 1).BiasLearnRateFactor=0; % At first layer, sub-bands are combined with 1 cnn layer, 
