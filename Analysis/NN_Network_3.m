@@ -47,16 +47,16 @@ channels = (1:64);
 totalsubject = 35;
 totalblock = 6;
 totalcharacter = 40;
-[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
+%[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
 
-
+%{
 As = AllData(:,:,:,1,:,:);
 y_As = y_AllData(:,1,:,:);
 for k=1:38
     AllData= cat(4, AllData, As);
     y_AllData=cat(2, y_AllData, y_As);
 end
-
+%}
 totalcharacter = 78;
 
 %% NN Architecture
@@ -158,8 +158,8 @@ outLayers = [
 lgraph = addLayers(lgraph, outLayers);
 lgraph = connectLayers(lgraph,['fc_layer_sublayer_', num2str(c)], 'softMax_layer');
 
-%plot(lgraph);
-%analyzeNetwork(lgraph);
+plot(lgraph);
+analyzeNetwork(lgraph);
 
 %% Training
 max_epochs=100;
