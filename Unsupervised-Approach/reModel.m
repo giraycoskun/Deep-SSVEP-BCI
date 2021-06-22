@@ -27,13 +27,6 @@ sample_length=sampling_rate*signal_length;
 
 visual_latency=0.13;
 
-char_freqs = zeros(1, totalcharacter);
-idx = 8;
-for i = 1:8:40
-    char_freqs(i:i+7) = idx:idx+7;
-    idx = idx + 0.2;
-end
-
 total_delay=visual_latency+visual_cue; % Total undesired signal length in seconds
 delay_sample_point=round(total_delay*sampling_rate); % # of data points correspond for undesired signal length
 sample_interval = (delay_sample_point+1):delay_sample_point+sample_length; % Extract desired signal
@@ -43,20 +36,16 @@ channels=[48 54 55 56 57 58 61 62 63]; % Indexes of 9 channels: (Pz, PO3, PO5, P
 %% Preprocess
 
 dirname = "preprocessedSignals/";
-filename = dirname + "signal_length_" + num2str(signal_length) + ".mat";
-
-%{
-[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset);
-
-save(filename,'AllData','y_AllData');
-%}
+filename = dirname + "signal_length_" + num2str(signal_length) + "_9channels.mat";
 
 
-load(filename);
+[AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset); save(filename,'AllData','y_AllData');
+
+% load(filename);
 
 %% Predict Results
 
-sizes = [sample_length, total_channel, subban_no];
+sizes = [total_channel, sample_length ,subban_no];
 
 acc_matrix=zeros(totalsubject,1); % Initialization of accuracy matrix
 all_conf_matrix=zeros(40,40); % Initialization of confusion matrix 
