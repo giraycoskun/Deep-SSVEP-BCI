@@ -4,6 +4,8 @@
 whos -file ssvep-global-models-02/main_net_0.2_1.mat
 %}
 
+dirname = "ssvep-global-models-02/";
+model_name = "main_net_0.2_";
 
 %% Benchmark Dataset
 
@@ -25,7 +27,7 @@ subban_no = 3;
 signal_length = 0.2; %%SIGNAL LENGTH
 sample_length=sampling_rate*signal_length; 
 
-visual_latency=0.13;
+visual_latency=0.14; %Beta -> .13
 
 total_delay=visual_latency+visual_cue; % Total undesired signal length in seconds
 delay_sample_point=round(total_delay*sampling_rate); % # of data points correspond for undesired signal length
@@ -35,8 +37,7 @@ channels=[48 54 55 56 57 58 61 62 63]; % Indexes of 9 channels: (Pz, PO3, PO5, P
 
 %% Preprocess
 
-dirname = "preprocessedSignals/";
-filename = dirname + "signal_length_" + num2str(signal_length) + "_9channels.mat";
+filename = "preprocessedSignals/" + "signal_length_" + num2str(signal_length) + "_9channels.mat";
 
 
 [AllData,y_AllData]=Preprocess2(channels,sample_length,sample_interval,subban_no,totalsubject,totalblock,totalcharacter,sampling_rate,dataset); save(filename,'AllData','y_AllData');
@@ -54,8 +55,8 @@ for i = 1:totalsubject
 
     % Load Data -> main_net variable
     target_subject = i;
-    dirname = "ssvep-global-models-02/";
-    filename = dirname + "main_net_0.2_" + num2str(target_subject) + ".mat";
+   
+    filename = dirname + model_name + num2str(target_subject) + ".mat";
     load(filename);
     
     % Predict
@@ -83,10 +84,10 @@ end
 
 %% Save Results
 
-dirname = "ssvep-global-models-02/";
-sv_name = dirname + 'confusion_matrix.mat';
+%dirname = "ssvep-global-models-02/";
+sv_name = dirname + model_name + '_confusion_matrix.mat';
 save(sv_name,'all_conf_matrix');    
 
-sv_name= dirname + 'acc_matrix.mat';
+sv_name= dirname + model_name + '_acc_matrix.mat';
 save(sv_name,'acc_matrix'); 
 
