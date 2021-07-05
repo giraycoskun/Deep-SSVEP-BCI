@@ -1,7 +1,17 @@
 %% Principal Component Analysis of Feature Vectors From Global Model Output
 
-%{ NOTES:
+%{ 
+    NOTES:
+    pca -> Returns the principal component coefficients, also 
+    known as loadings, for the n-by-p data matrix X. 
+    Rows of X correspond to observations and columns correspond to variables. 
+    The coefficient matrix is p-by-p. Each column of coeff contains coefficients for one principal component, 
+    and the columns are in descending order of component variance. 
+    By default, pca centers the data and uses the singular value decomposition (SVD) algorithm.
 
+    Features extracted from layer 8
+
+https://www.mathworks.com/help/matlab/ref/colormap.html
 %}
 
 dirname = "ssvep-global-models-02/";
@@ -56,11 +66,15 @@ load(filename);
 %% Get Feature Vectors
 
 net = main_net;
+feature_vector_size = 120*25;
+feature_vectors = zeros(feature_vector_size, 240);
+feature_labels = zeros(240, 1);
 
 for testblock=1:totalblock
+
     testdata=AllData(:,:,:,1:40,testblock,target_subject);
     testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
-
+    
     test_y=y_AllData(:,1:40,testblock,target_subject);
     test_y=reshape(test_y,[1,totalcharacter*1]);
     test_y=categorical(test_y);
@@ -68,7 +82,26 @@ for testblock=1:totalblock
     X = testdata;
     layer = 8; % 'conv_4'
     act = activations(net,X,layer);
+    feature = reshape(act, [feature_vector_size, totalcharacter]);
+    start_index = (40 * (testblock -1)) + 1;
+    end_index = testblock * 40;
 
-end      
+    feature_vectors(:, start_index:end_index) = feature;
+    feature_labels(start_index:end_index,:) = test_y;
+
+end
+
+%% PCA
 
 
+X = feature_vectors;
+algorithm = 'svd'; % 'eig', 'als'
+num_components = 2;
+
+[coeff,score,latent] = pca(X,'Algorithm',algorithm, 'NumComponents', num_components);
+
+
+%% Graph
+
+scatter(coeff(:,1), coeff(:,2), 36, feature_labels, 'filled');
+colormap(turbo(40));
