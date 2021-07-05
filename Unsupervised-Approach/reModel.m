@@ -4,8 +4,8 @@
 whos -file ssvep-global-models-02/main_net_0.2_1.mat
 %}
 
-dirname = "ssvep-global-models-02/";
-model_name = "main_net_0.2_";
+dirname = "ssvep-global-models-03/";
+model_name = "main_net_0.3_";
 
 %% Benchmark Dataset
 
@@ -24,7 +24,7 @@ sampling_rate=250;
 	
 visual_cue=0.5;
 subban_no = 3;
-signal_length = 0.2; %%SIGNAL LENGTH
+signal_length = 0.3; %%SIGNAL LENGTH
 sample_length=sampling_rate*signal_length; 
 
 visual_latency=0.14; %Beta -> .13
@@ -84,10 +84,10 @@ end
 
 %% Save Results
 
-%dirname = "ssvep-global-models-02/";
-sv_name = dirname + model_name + '_confusion_matrix.mat';
+dirname = "Unsupervised-Approach/Results/";
+sv_name = dirname + signal_length + '_confusion_matrix.mat';
 save(sv_name,'all_conf_matrix');    
 
-sv_name= dirname + model_name + '_acc_matrix.mat';
+sv_name= dirname + signal_length + '_acc_matrix.mat';
 save(sv_name,'acc_matrix'); 
 
