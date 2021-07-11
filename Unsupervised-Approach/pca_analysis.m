@@ -11,11 +11,14 @@
 
     Features extracted from layer 8
 
+    analyzeNetwork(main_net); -> set feature size
+        1 second -> 125
+        0.2 second -> 25
 https://www.mathworks.com/help/matlab/ref/colormap.html
 %}
 
-dirname = "ssvep-global-models-02/";
-model_name = "main_net_0.2_";  %% SET SIGNAL LENGTH BASED ON MODEL
+dirname = "ssvep-global-models-10/";
+model_name = "main_net_1.0_";  %% SET SIGNAL LENGTH BASED ON MODEL
 
 %% Benchmark Dataset
 
@@ -34,7 +37,7 @@ sampling_rate=250;
 	
 visual_cue=0.5;
 subban_no = 3;
-signal_length = 0.2; %%SIGNAL LENGTH
+signal_length = 1; %%SIGNAL LENGTH
 sample_length=sampling_rate*signal_length; 
 
 visual_latency=0.14; %Beta -> .13
@@ -58,50 +61,56 @@ load(filename);
 
 sizes = [total_channel, sample_length ,subban_no];
 
-target_subject = 1;
+
+for target_subject=1:totalsubject
+
+    %target_subject = 1;
    
-filename = dirname + model_name + num2str(target_subject) + ".mat";
-load(filename);
+    filename = dirname + model_name + num2str(target_subject) + ".mat";
+    load(filename);
 
-%% Get Feature Vectors
 
-net = main_net;
-feature_vector_size = 120*25;
-feature_vectors = zeros(feature_vector_size, 240);
-feature_labels = zeros(240, 1);
+    net = main_net;
+    feature_vector_size = 120*125;
+    feature_vectors = zeros(feature_vector_size, 240);
+    feature_labels = zeros(240, 1);
 
-for testblock=1:totalblock
+    for testblock=1:totalblock
 
-    testdata=AllData(:,:,:,1:40,testblock,target_subject);
-    testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
-    
-    test_y=y_AllData(:,1:40,testblock,target_subject);
-    test_y=reshape(test_y,[1,totalcharacter*1]);
-    test_y=categorical(test_y);
-    
-    X = testdata;
-    layer = 8; % 'conv_4'
-    act = activations(net,X,layer);
-    feature = reshape(act, [feature_vector_size, totalcharacter]);
-    start_index = (40 * (testblock -1)) + 1;
-    end_index = testblock * 40;
+        testdata=AllData(:,:,:,1:40,testblock,target_subject);
+        testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
 
-    feature_vectors(:, start_index:end_index) = feature;
-    feature_labels(start_index:end_index,:) = test_y;
+        test_y=y_AllData(:,1:40,testblock,target_subject);
+        test_y=reshape(test_y,[1,totalcharacter*1]);
+        test_y=categorical(test_y);
 
+        X = testdata;
+        layer = 8; % 'conv_4'
+        act = activations(net,X,layer);
+        feature = reshape(act, [feature_vector_size, totalcharacter]);
+        start_index = (40 * (testblock -1)) + 1;
+        end_index = testblock * 40;
+
+        feature_vectors(:, start_index:end_index) = feature;
+        feature_labels(start_index:end_index,:) = test_y;
+
+    end
+
+    %% PCA
+
+
+    X = feature_vectors;
+    algorithm = 'eig'; % 'eig', 'als', 'svd'
+    num_components = 3;
+
+    [coeff,score,latent] = pca(X,'Algorithm',algorithm, 'NumComponents', num_components);
+
+    scatter3(coeff(:,1), coeff(:,2), coeff(:,3), 36, feature_labels, 'filled'); 
+    colormap(turbo(40));
+    hold on
 end
-
-%% PCA
-
-
-X = feature_vectors;
-algorithm = 'svd'; % 'eig', 'als'
-num_components = 2;
-
-[coeff,score,latent] = pca(X,'Algorithm',algorithm, 'NumComponents', num_components);
 
 
 %% Graph
 
-scatter(coeff(:,1), coeff(:,2), 36, feature_labels, 'filled');
-colormap(turbo(40));
+
