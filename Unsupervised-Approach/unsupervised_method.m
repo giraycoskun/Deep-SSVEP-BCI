@@ -7,6 +7,8 @@
     The cross-entropy for each pair of output-target elements is calculated as: ce = -t .* log(y).
     The binary cross-entropy expression is: ce = -t .* log(y) - (1-t) .* log(1-y) .
 
+    https://www.mathworks.com/help/deeplearning/ug/define-custom-classification-output-layer.html
+
 %}
 
 dirname = "ssvep-global-models-02/";
@@ -124,12 +126,18 @@ total_loss = 0;
 for block=1:totalblock
     for char=1:totalcharacter
         index = (testblock-1)*40 + char;
-        loss = crossentropy(softmax_0(index, :), softmax_0(index, :));
-        total_loss = total_loss + loss;
-        disp(loss);
+        loss_0 = crossentropy(softmax_0(index, :), softmax_0(index, :));
+        
     end
 end
 
+
+%% Network
+
+outputSize = 40;
+layer = fullyConnectedLayer([totalcharacter], 'Name', 'fc');
+softmax_layer = softmaxLayer('Name', 'softmax');
+classification_Layer = myClassificationLayer('classification_output');
 
 
 
