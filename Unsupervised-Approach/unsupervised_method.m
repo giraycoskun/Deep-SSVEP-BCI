@@ -60,9 +60,9 @@ net = main_net;
 
 %% Get Softmax Output for first features
 
-softmax_0 = zeros(totalblock, totalcharacter, totalcharacter);
+softmax_0 = zeros(totalblock*totalcharacter, totalcharacter);
 feature_size = 25 * 120;
-feature_0 = zeros(totalblock, totalcharacter, feature_size);
+feature_0 = zeros(totalblock*totalcharacter, feature_size);
 sizes = [total_channel, sample_length ,subban_no];
 
 for testblock=1:totalblock
@@ -74,16 +74,16 @@ for testblock=1:totalblock
         testdata=AllData(:,:,:,char,testblock,target_subject);
         %testdata=reshape(testdata,[sizes(1),sizes(2),sizes(3),totalcharacter]);
 
-        
+        index = (testblock-1)*40 + char;
         X = testdata;
         layer = 11; % 'softmax'
         act = activations(net,X,layer);
-        softmax_0(testblock, char, :) = act(1,1,:);
+        softmax_0(index, :) = act(1,1,:);
         
         layer = 8; % 'conv_4'
         act = activations(net,X,layer);
         feature = reshape(act, [feature_size, 1]);
-        feature_0(testblock, char, :) = feature;
+        feature_0(index, :) = feature;
     end
 end
 
@@ -103,28 +103,28 @@ for block=1:totalblock
    target_probs(block,:,:) = target_vector;
 end
 
-%% Calculate NEarest Neighbors
+%% Calculate Nearest Neighbors
 
-k = 10;
-lambda = 0.5;
-X = feature_0(1, 3, :);
-X = reshape(X, [1, feature_size]);
-Y = feature_0(:, :, :);
-Y = reshape(Y, [totalcharacter*totalblock, feature_size]);
-Idx = knnsearch(Y ,X, 'K', k, 'Distance', 'euclidean' );
+k = 11;
+
+X = feature_0;
+
+Y = feature_0(41, :);
+
+Idx = knnsearch(X ,Y, 'K', k, 'Distance', 'euclidean');
 
 %% Calculate Cross-Entropy
 
+lambda = 0.5;
 
-
-%THRE IS ALFA
+%THERE IS ALFA
 
 
 total_loss = 0;
 for block=1:totalblock
     for char=1:totalcharacter
-      
-        loss = crossentropy(softmax_0(block, char, :), softmax_0(block, char, :));
+        index = (testblock-1)*40 + char;
+        loss = crossentropy(softmax_0(index, :), softmax_0(index, :));
         total_loss = total_loss + loss;
         disp(loss);
     end
